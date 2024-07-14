@@ -2,7 +2,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from api.models import models, schemas
-from api.controllers import orders, sandwiches
+from api.controllers import orders, sandwiches, recipes
 from api.dependencies.database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
@@ -73,7 +73,7 @@ def read_one_sandwich(sandwich_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/sandwiches/{sandwich_id}", response_model=schemas.Sandwich, tags=["Sandwiches"])
-def update_one_sandwich(sandwich_id: int, sandwich: schemas.OrderUpdate, db: Session = Depends(get_db)):
+def update_one_sandwich(sandwich_id: int, sandwich: schemas.SandwichUpdate, db: Session = Depends(get_db)):
     sandwich_db = sandwiches.read_one(db, sandwich_id=sandwich_id)
     if sandwich_db is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -86,3 +86,38 @@ def delete_one_sandwich(sandwich_id: int, db: Session = Depends(get_db)):
     if sandwich is None:
         raise HTTPException(status_code=404, detail="User not found")
     return sandwiches.delete(db=db, sandwich_id=sandwich_id)
+
+'''RECIPES'''
+
+@app.post("/recipes/", response_model=schemas.Recipe, tags=["Recipes"])
+def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
+    return recipes.create(db=db, recipe=recipe)
+
+
+@app.get("/recipes/", response_model=list[schemas.Recipe], tags=["Recipes"])
+def read_recipes(db: Session = Depends(get_db)):
+    return recipes.read_all(db)
+
+
+@app.get("/recipes/{recipe_id}", response_model=schemas.Recipe, tags=["Recipes"])
+def read_one_recipe(recipe_id: int, db: Session = Depends(get_db)):
+    recipe = recipes.read_one(db, recipe_id=recipe_id)
+    if recipe is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return recipe
+
+
+@app.put("/recipes/{recipe_id}", response_model=schemas.Recipe, tags=["Recipes"])
+def update_one_recipe(recipe_id: int, recipe: schemas.RecipeUpdate, db: Session = Depends(get_db)):
+    sandwich_db = recipes.read_one(db, recipe_id=recipe_id)
+    if sandwich_db is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return recipes.update(db=db, recipe=recipe, recipe_id=recipe_id)
+
+
+@app.delete("/recipes/{recipe_id}", tags=["Recipes"])
+def delete_one_recipe(recipe_id: int, db: Session = Depends(get_db)):
+    recipe = recipes.read_one(db, recipe_id=recipe_id)
+    if recipe is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return recipes.delete(db=db, recipe_id=recipe_id)
